@@ -46,7 +46,7 @@
         <configuration>
           <archive>
             <manifest>
-              <mainClass>demo.MainKt</mainClass>
+              <mainClass>MainKt</mainClass>
             </manifest>
           </archive>
           <descriptorRefs>
