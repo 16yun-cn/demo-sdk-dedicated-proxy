@@ -1,7 +1,10 @@
 ## 16YUN(亿牛云) C++ Demo（private 独享代理, libcurl）
 
+以下命令从独立仓库 `demo-sdk-dedicated-proxy` 根目录开始，按顺序执行安装和运行步骤；使用总仓库 `demo-sdk` 时，先执行 `cd dedicated-proxy`。
+
 构建与运行：
 ```
+cd cpp/basic
 make
 export PRIVATE_HOST=s1.ip.16yun.cn
 export PRIVATE_PORT=39010

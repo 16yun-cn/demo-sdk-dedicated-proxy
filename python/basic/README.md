@@ -1,5 +1,7 @@
 ## 独享代理示例（Python requests）
 
+以下命令从独立仓库 `demo-sdk-dedicated-proxy` 根目录开始，按顺序执行安装和运行步骤；使用总仓库 `demo-sdk` 时，先执行 `cd dedicated-proxy`。
+
 环境变量：
 - `PRIVATE_HOST`（默认 `s1.ip.16yun.cn`）
 - `PRIVATE_PORT`（默认 `39010`）
@@ -8,6 +10,7 @@
 
 运行：
 ```
+cd python/basic
 pip install -r requirements.txt
 python main.py
 ```
