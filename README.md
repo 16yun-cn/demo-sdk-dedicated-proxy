@@ -1,96 +1,100 @@
-## 16YUN(亿牛云) 独享代理使用说明
+# 亿牛云独享代理使用说明
 
-本说明文档对独享代理的管理与接入进行说明，延续本仓库 API_README 风格与结构，提供常见操作的命令与代码示例，便于快速上手与排障。
+独享代理为单个业务提供独立出口 IP，适合需要稳定出口和自主控制切换时机的任务。代理连接使用域名、端口、用户名和密码，无需配置代理服务的 IP 白名单；目标站自己的白名单要求仍需按业务配置。
 
----
+## 官方帮助
 
-### 一、产品概述
+[帮助首页](https://www.16yun.cn/help/) · [首次接入](https://www.16yun.cn/help/quickstart/dedicated-access/) · [开发手册](https://www.16yun.cn/help/dev-manual/dedicated-proxy-guide/) · [开发 FAQ](https://www.16yun.cn/help/dev-manual/dedicated-proxy-faq/) · [代码示例与 SDK](https://www.16yun.cn/help/code-sdk/dedicated-proxy/) · [错误码说明](https://www.16yun.cn/help/dev-manual/errcode/)
 
-- 独享代理提供固定独占出口与独立端口，HTTP/HTTPS 可用。
-- 提供简化管理接口：查询当前出口、切换出口 IP、重启服务实例。
-- 典型场景：账号敏感场景、固定 IP 白名单接入、稳定长连业务。
+接口概念另见[新版接口说明](https://www.16yun.cn/help/product-intro/dedicated-interface-manual/)。**本仓库暂时保留现有 `/simple/*` 管理接口及查询参数认证。新版帮助站介绍的 `/ip`、`/switch-ip`、`/ip-status` 和 Basic 认证是另一套调用方式，不要混用。以下命令与本仓库当前实现一致。**
 
----
+## 首次接入
 
-### 二、准备与开通
+1. 开通独享代理订单，取得代理域名、端口、用户名、密码以及现有管理接口基址。
+2. 先验证代理连接，再按需要执行管理操作。代理端口和管理接口端口用途不同，均以订单接入信息为准。
+3. 选择语言示例，设置对应环境变量。
 
-1) 在控制台开通独享代理，记下“管理接口地址”“代理主机与端口”“用户名/密码”。
-2) 如需目标站白名单，将独享出口 IP 加入目标站白名单。
-3) 建议在本地以环境变量形式保存凭据，避免硬编码。
+首次连接信息见[独享代理接入](https://www.16yun.cn/help/quickstart/dedicated-access/)。
 
-示例占位：
-- 管理接口基址：`http://s1.ip.16yun.cn:887`
-- 代理地址：`s1.ip.16yun.cn:39010`
+## 先验证代理出口
 
----
+下面的占位值需替换为订单信息。访问 HTTPS 目标时，HTTP 代理 URL 仍以 `http://` 开头。
 
-### 三、管理接口
-
-| 功能 | 路径 | 频率限制（示例） |
-| --- | --- | --- |
-| 获取当前 IP | `/simple/current-ip?username=<user>&password=<pass>` | 1200 次/小时 |
-| 切换 IP | `/simple/switch-ip?username=<user>&password=<pass>` | 180 次/小时，间隔 > 20s |
-| 重启服务 | `/simple/update?username=<user>&password=<pass>` | 10 次/小时，间隔 > 360s |
-
-说明：具体频控以开通信息为准；超过频率会返回失败或 429。
-
-响应示例：
-- 获取当前 IP
-```json
-[{"ip": "180.102.181.64", "ttl": 262.87}]
-```
-- 切换 IP
-```json
-[{"last_ip": "180.102.181.64", "result": true}]
-```
-- 重启服务
-```json
-[["user1-16yun12312-39507", "", "created"]]
-```
-
----
-
-### 四、快速示例
-
-curl（将 `<user>/<pass>` 替换为真实值）：
 ```bash
-BASE="http://s1.ip.16yun.cn:887"
-curl "$BASE/simple/current-ip?username=<user>&password=<pass>"
-curl "$BASE/simple/switch-ip?username=<user>&password=<pass>"
-curl "$BASE/simple/update?username=<user>&password=<pass>"
+curl --proxy 'http://<代理域名>:<代理端口>' \
+  --proxy-user '<用户名>:<密码>' \
+  'https://httpbin.org/ip'
 ```
 
-Python（通过独享代理访问检测地址）：
-```python
-import requests
+检查响应出口 IP 是否为独享出口，确认请求经过代理。
 
-proxy = "http://username:password@s1.ip.16yun.cn:39010"
-proxies = {"http": proxy, "https": proxy}
-resp = requests.get("https://httpbin.org/ip", proxies=proxies, timeout=15)
-print(resp.text)
+## 当前管理接口
+
+下面沿用现有实现，不迁移接口路径、认证或返回格式。`PRIVATE_BASE` 是管理接口基址，示例默认值为 `http://s1.ip.16yun.cn:887`，实际值以接入信息为准。
+
+| 操作 | 路径 | 作用 |
+| --- | --- | --- |
+| 查询当前出口 | `/simple/current-ip` | 获取当前 IP 与剩余有效时间 |
+| 切换出口 | `/simple/switch-ip` | 主动切换 IP |
+| 重启服务 | `/simple/update` | 重启服务实例，可能影响当前连接 |
+
+三个接口均通过查询参数 `username`、`password` 传入凭据。下面先展示查询命令；执行切换或重启前，请确认当前任务可以中断。
+
+```bash
+export PRIVATE_BASE='http://s1.ip.16yun.cn:887'
+export PRIVATE_USERNAME='<订单用户名>'
+export PRIVATE_PASSWORD='<订单密码>'
+curl --get "$PRIVATE_BASE/simple/current-ip" \
+  --data-urlencode "username=$PRIVATE_USERNAME" \
+  --data-urlencode "password=$PRIVATE_PASSWORD"
 ```
 
-Go：
-```go
-proxyURL, _ := url.Parse("http://username:password@s1.ip.16yun.cn:39010")
-client := http.Client{Transport: &http.Transport{Proxy: http.ProxyURL(proxyURL)}}
-resp, err := client.Get("https://httpbin.org/ip")
+需要切换或重启时，在上述命令中分别将 `current-ip` 替换为 `switch-ip` 或 `update`。调用频率、最小间隔及实际返回以现有接口和订单约定为准。
+
+## 运行语言示例
+
+**现有语言示例包含管理操作，会查询出口、切换 IP、重启服务，然后通过代理访问目标站。运行前请确认这些操作符合当前订单的使用安排。**
+
+以下命令从独立仓库 `demo-sdk-dedicated-proxy` 根目录执行；如果使用总仓库 `demo-sdk`，先执行 `cd dedicated-proxy`。需要 Python、pip 和可调用当前管理接口的订单，依赖见[Python 示例](python/basic/README.md)。
+
+```bash
+cd python/basic
+pip install -r requirements.txt
+export PRIVATE_HOST='<订单代理域名>'
+export PRIVATE_PORT='<订单代理端口>'
+export PRIVATE_BASE='http://s1.ip.16yun.cn:887'
+export PRIVATE_USERNAME='<订单用户名>'
+export PRIVATE_PASSWORD='<订单密码>'
+export TARGET_URL='https://httpbin.org/ip'
+python main.py
 ```
 
----
+各语言支持的变量和默认值见对应示例 README。凭据只在本地配置，不提交真实账号或密码。
 
-### 五、使用建议
+## 语言与示例
 
-- 控制调用频率：切换/重启接口受限频，务必加入最小间隔与失败退避。
-- 会话与长连：独享代理适合长连接；必要时保持 Keep-Alive，避免频繁重建连接。
-- 目标站策略：根据站点要求设置 `User-Agent`、`Referer`、`Cookie` 等，遵守使用规范。
-- 凭据安全：不要在代码库中提交真实 `username/password` 与端口，使用环境变量或本地配置。
+| 语言 | 示例 |
+| --- | --- |
+| [C++](cpp/README.md) | [basic](cpp/basic/README.md) |
+| [C#](csharp/README.md) | [basic](csharp/basic/README.md) |
+| [Go](golang/README.md) | [basic](golang/basic/README.md) |
+| [Java](java/README.md) | [basic](java/basic/README.md) |
+| [Kotlin](kotlin/README.md) | [basic](kotlin/basic/README.md)（暂无源码） |
+| [Node.js](nodejs/README.md) | [basic](nodejs/basic/README.md) |
+| [PHP](php/README.md) | [basic](php/basic/README.md) |
+| [Python](python/README.md) | [basic](python/basic/README.md) |
+| [Ruby](ruby/README.md) | [basic](ruby/basic/README.md) |
+| [Rust](rust/README.md) | [basic](rust/basic/README.md) |
 
----
+## 常见问题
 
-### 六、常见问题与排障
+| 现象 | 排查动作 |
+| --- | --- |
+| 代理返回 407 | 检查代理连接信息和请求库的代理认证配置 |
+| 管理接口认证失败 | 检查当前 `/simple/*` 接口的基址及查询参数，不要混用新版 Basic 认证示例 |
+| 管理接口限频 | 按接口约定降低频率，避免连续切换或重启 |
+| 代理已配置但出口未变化 | 使用 IP 查询地址验证，检查请求是否实际经过代理 |
+| 切换后仍使用原出口 | 检查接口响应和连接复用情况，使用新连接重新验证 |
+| HTTPS 或网络异常 | 先检查目标能否直连，再检查代理连接、认证及超时 |
 
-- 401/407：代理认证失败 → 检查用户名/密码；优先使用库内置代理认证接口。
-- 429：频率超限 → 降低调用频率或延长间隔，实施指数退避。
-- 5xx/超时：网络或目标站异常 → 增加超时、重试与日志；确认本机与目标站网络可达。
-- 切换后仍旧出口不变：等待 TTL 到期或连接池释放，再次发起新连接验证。
+代理接入排障见[独享开发手册](https://www.16yun.cn/help/dev-manual/dedicated-proxy-guide/)、[开发 FAQ](https://www.16yun.cn/help/dev-manual/dedicated-proxy-faq/)和[错误码说明](https://www.16yun.cn/help/dev-manual/errcode/)。其中管理接口调用方式与本仓库的差异以上文说明为准。

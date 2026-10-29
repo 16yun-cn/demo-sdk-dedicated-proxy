@@ -1,13 +1,9 @@
 ## 16YUN(亿牛云) Kotlin Demo（private 独享代理, OkHttp）
 
-运行：
-```
-cd kotlin-demo/private
-mvn -q -DskipTests package
-java -jar target/kotlin-demo-private-0.1.0-shaded.jar
-```
+当前目录仅保留项目配置，尚无可运行示例源码。暂不提供构建或运行命令，也不声明已实现的代理能力。
 
-必需环境变量：
-- `PRIVATE_HOST`、`PRIVATE_PORT`、`PRIVATE_USERNAME`、`PRIVATE_PASSWORD`
+请先阅读[产品接入说明](../../README.md)，从其中的示例索引选择已有源码的实现。
 
-说明：程序会先调用管理接口（`current-ip`/`switch-ip`/`update`），再通过独享代理访问 `TARGET_URL`。
+## 官方帮助
+
+[帮助首页](https://www.16yun.cn/help/) · [首次接入](https://www.16yun.cn/help/quickstart/dedicated-access/) · [开发手册](https://www.16yun.cn/help/dev-manual/dedicated-proxy-guide/) · [开发 FAQ](https://www.16yun.cn/help/dev-manual/dedicated-proxy-faq/) · [代码示例与 SDK](https://www.16yun.cn/help/code-sdk/dedicated-proxy/) · [错误码说明](https://www.16yun.cn/help/dev-manual/errcode/)
