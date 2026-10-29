@@ -1,4 +1,5 @@
 ## Private Proxy · Rust
 
-- default: `rust-demo/private/`
+- [basic](basic/README.md)
 
+[产品接入说明](../README.md)

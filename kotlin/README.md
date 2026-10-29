@@ -1,4 +1,5 @@
 ## Private Proxy · Kotlin
 
-- default: `kotlin-demo/private/`
+- [basic](basic/README.md)
 
+[产品接入说明](../README.md)

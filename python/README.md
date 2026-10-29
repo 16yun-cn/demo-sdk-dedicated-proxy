@@ -1,4 +1,5 @@
 ## Private Proxy · Python
 
-- default: `python-demo/private/`
+- [basic](basic/README.md)
 
+[产品接入说明](../README.md)
